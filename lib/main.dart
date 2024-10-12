@@ -4,7 +4,8 @@ import 'nutrition.dart';
 import 'static.dart';
 import 'goal.dart';
 import 'package:table_calendar/table_calendar.dart';
-//추후에 체크리스트나 통계, 영양같은 데이터들은 데이터베이스에서 가져오게할 예정입니다. 통계파트는 좀 더 상의가 필요할 것 같아요.
+// 추후에 체크리스트나 통계, 영양 같은 데이터들은 데이터베이스에서 가져오게 할 예정입니다.
+
 void main() {
   runApp(MyApp());
 }
@@ -26,14 +27,41 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  int _selectedPageIndex = 0; // 현재 선택된 페이지 인덱스
+  int _selectedPageIndex = 0; // 현재 선택된 페이지
 
-  final List<Widget> _pages = [
-    ChecklistPage(),
-    NutritionPage(),
-    StaticPage(),
-    GoalPage(),
-  ];
+  // 날짜별 데이터를 저장하는 Map
+  Map<DateTime, Map<String, dynamic>> _dateData = {
+    DateTime.utc(2024, 10, 1): {
+      'checklist': ['운동하기', '영양제 복용'],
+      'nutrition': {'칼로리': 2200, '단백질': 150},
+      'goal': '5km 달리기',
+    },
+    DateTime.utc(2024, 10, 2): {
+      'checklist': ['스트레칭', '물 2L 마시기'],
+      'nutrition': {'칼로리': 1800, '단백질': 130},
+      'goal': '책 30페이지 읽기',
+    },
+  };
+
+  // 선택된 날짜의 데이터를 저장하는 변수
+  Map<String, dynamic> _currentData = {}; //데이터베이스 연동시 해당 날짜의 데이터를 가져와 _currentData에 저장
+                                          //line58에 추가.
+  @override
+  void initState() {
+    super.initState();
+    _loadDataForSelectedDay(_focusedDay); // 앱이 실행될 때 현재 날짜에 해당하는 데이터를 로드
+  }
+
+  // 날짜 선택 시 데이터를 불러오는 함수
+  void _loadDataForSelectedDay(DateTime selectedDay) {
+    setState(() {
+      _currentData = _dateData[selectedDay] ?? { //요기!
+        'checklist': ['데이터 없음'],
+        'nutrition': {'칼로리': 0, '단백질': 0},
+        'goal': '목표 없음',
+      };
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +87,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     setState(() {
                       _selectedDay = selectedDay;
                       _focusedDay = focusedDay;
+                      _loadDataForSelectedDay(selectedDay); // 날짜 선택 시 데이터 로드
                     });
                   },
                   calendarFormat: CalendarFormat.month,
@@ -96,7 +125,12 @@ class _CalendarPageState extends State<CalendarPage> {
           Expanded(
             child: IndexedStack(
               index: _selectedPageIndex, // 현재 선택된 페이지 인덱스
-              children: _pages, // 각 페이지 위젯들
+              children: [
+                _buildChecklistPage(),
+                _buildNutritionPage(),
+                StaticPage(),
+                _buildGoalPage(),
+              ],
             ),
           ),
         ],
@@ -121,6 +155,39 @@ class _CalendarPageState extends State<CalendarPage> {
           padding: EdgeInsets.zero,
         ),
       ),
+    );
+  }
+
+  // 체크리스트 페이지
+  Widget _buildChecklistPage() {
+    List<String> checklist = _currentData['checklist'] ?? ['데이터 없음'];
+    return ListView.builder(
+      itemCount: checklist.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(checklist[index]),
+        );
+      },
+    );
+  }
+
+  // 영양 페이지
+  Widget _buildNutritionPage() {
+    Map<String, int> nutrition = _currentData['nutrition'] ?? {'칼로리': 0, '단백질': 0};
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text('칼로리: ${nutrition['칼로리']} kcal'),
+        Text('단백질: ${nutrition['단백질']} g'),
+      ],
+    );
+  }
+
+  // 목표 페이지
+  Widget _buildGoalPage() {
+    String goal = _currentData['goal'] ?? '목표 없음';
+    return Center(
+      child: Text('오늘의 목표: $goal'),
     );
   }
 }

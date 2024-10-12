@@ -8,7 +8,7 @@ class GoalPage extends StatefulWidget {
 }
 
 class _GoalPageState extends State<GoalPage> {
-  final List<Goal> _goals = [
+  final List<Goal> _goals = [ //나중에 데이터베이스에서 데이터 가져오기
     Goal(title: '체중 감량', description: '1개월에 2kg 감량하기'),
     Goal(title: '매일 운동하기', description: '주 5일 이상 운동하기'),
   ];
